@@ -42,7 +42,7 @@ def cargar_precios_insumos():
     except:
         pass
     return {
-        "BO 520": 5.00, "SS OPTIMA 5%": 5.50, "ECO BOH": 0.00,
+        "BO 520": 5.00, "SS OPTIMA 5%": 5.50, "DOBLE BO + SUNS": 0.00,
         "Caño 32": 3.33, "Caño 38": 4.33, "Caño 32 Ref": 3.33,
         "Zócalo DAVID": 4.10, "Zócalo SS": 4.10,
         "CINTA": 0.30, "FIDEO": 0.30, "Fleje": 0.13,
@@ -125,7 +125,7 @@ with tab_cotizador:
         st.markdown("**Configurar Cortina**")
         ancho_cm = st.number_input("Ancho de la Cortina (en cm)", min_value=10.0, value=150.0, step=1.0)
         alto_cm = st.number_input("Alto de la Cortina (en cm)", min_value=10.0, value=200.0, step=1.0)
-        tipo_tela = st.selectbox("Seleccionar Tela:", ["BO 520", "SS OPTIMA 5%", "ECO BOH"])
+        tipo_tela = st.selectbox("Seleccionar Tela:", ["BO 520", "SS OPTIMA 5%", "DOBLE BO + SUNS"])
         tipo_zocalo = st.selectbox("Seleccionar Perfil Zócalo:", ["Zócalo DAVID", "Zócalo SS"])
         es_doble = st.checkbox("¿Es Cortina DOBLE?", value=False)
         cantidad = st.number_input("Cantidad de este ítem:", min_value=1, value=1, step=1)
