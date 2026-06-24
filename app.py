@@ -477,6 +477,7 @@ with tab_config:
             insumos["Soporte J38 DOBLE"] = st.number_input("Soporte J38 DOBLE (USD)", value=float(insumos["Soporte J38 DOBLE"]), format="%.2f")
             insumos["CONTRAPESO CADENA"] = st.number_input("Contrapeso (USD)", value=float(insumos["CONTRAPESO CADENA"]), format="%.2f")
             insumos["CADENA PLÁSTICA"] = st.number_input("Cadena Plástica (USD/ML)", value=float(insumos["CADENA PLÁSTICA"]), format="%.2f")
+            insumos["ACCESORIOS CADENA"] = st.number_input("Accesorios Cadena (USD)", value=float(insumos.get("ACCESORIOS CADENA", 0.18)), format="%.2f")
             insumos["FLETE"] = st.number_input("Flete por Unidad (USD)", value=float(insumos["FLETE"]), format="%.2f")
     else:
         if password_ingresada != "":
