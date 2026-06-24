@@ -194,6 +194,7 @@ with tab_cotizador:
             {"Componente": f"Sistema: {n_mec}", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i.get(n_mec, 0.0)},
             {"Componente": "Cadena de Mando", "Cantidad": float(4.0 * multiplicador), "Subtotal USD": float(4.0 * multiplicador) * p_i.get("CADENA PLÁSTICA", 0.0)},
             {"Componente": "Contrapeso Cadena", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i.get("CONTRAPESO CADENA", 0.0)},
+            {"Componente": "Accesorios Cadena", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i.get("ACCESORIOS CADENA", 0.0)},
             {"Componente": "Flete Logístico", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i.get("FLETE", 0.0)}
         ]
         if es_doble:
