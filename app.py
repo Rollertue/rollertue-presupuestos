@@ -86,56 +86,67 @@ tab_cotizador, tab_config, tab_historial_cloud = st.tabs([
 # =========================================================
 # PESTAÑA: CONFIGURACIÓN FINANCIERA Y PRECIOS
 # =========================================================
-with tab_config:
-    st.header("⚙️ Configuración Global del Sistema")
-    col_d, _ = st.columns([1, 2])
-    with col_d:
-        st.session_state['dolar'] = st.number_input("Cotización del Dólar (ARS):", min_value=1.0, value=st.session_state['dolar'], step=10.0)
-    
-    st.markdown("---")
-    col_f1, col_f2 = st.columns(2)
-    with col_f1:
-        st.subheader("📊 Módulo de Márgenes Financieros")
-        st.session_state['margen_rentabilidad'] = st.number_input("Rentabilidad sobre Costo (%)", min_value=0.0, value=st.session_state['margen_rentabilidad'])
-        st.session_state['componente_financiero'] = st.number_input("Componente Financiero para Lista (%)", min_value=0.0, value=st.session_state['componente_financiero'])
-        st.session_state['desc_3_cuotas'] = st.number_input("Descuento en 3 Cuotas Fijas (%)", min_value=0.0, value=st.session_state['desc_3_cuotas'])
-        st.session_state['desc_tarjeta'] = st.number_input("Descuento 1 pago Tarjeta (%)", min_value=0.0, value=st.session_state['desc_tarjeta'])
-        st.session_state['desc_efectivo'] = st.number_input("Descuento Efectivo (%)", min_value=0.0, value=st.session_state['desc_efectivo'])
-    with col_f2:
-        st.subheader("🚚 Módulo de Servicios e Instalaciones ($ ARS)")
-        st.session_state['toma_medidas'] = st.number_input("Servicio Toma de Medidas ($)", min_value=0.0, value=st.session_state['toma_medidas'], step=1000.0)
-        st.session_state['inst_jdla_1ra'] = st.number_input("JDLA - Instalación 1ra Cortina ($)", min_value=0.0, value=st.session_state['inst_jdla_1ra'], step=1000.0)
-        st.session_state['inst_sma_1ra'] = st.number_input("SMA - Instalación 1ra Cortina ($)", min_value=0.0, value=st.session_state['inst_sma_1ra'], step=1000.0)
-        st.session_state['inst_adicional'] = st.number_input("Valor Cortina Adicional ($)", min_value=0.0, value=st.session_state['inst_adicional'], step=1000.0)
 
-    st.markdown("---")
-    st.subheader("🛠️ Costo Base de Componentes (Valores en USD)")
-    insumos = st.session_state['precios_insumos']
-    col_c1, col_c2, col_c3 = st.columns(3)
-    with col_c1:
-        st.markdown("### 🔹 Telas y Caños")
-        insumos["BO 520"] = st.number_input("Tela BO 520 (USD/m²)", value=insumos["BO 520"], format="%.2f")
-        insumos["SS OPTIMA 5%"] = st.number_input("Tela SS OPTIMA 5% (USD/m²)", value=insumos["SS OPTIMA 5%"], format="%.2f")
-        insumos["ECO BOH"] = st.number_input("Tela ECO BOH (USD/m²)", value=insumos["ECO BOH"], format="%.2f")
-        insumos["Caño 32"] = st.number_input("Caño 32 (USD/ML)", value=insumos["Caño 32"], format="%.2f")
-        insumos["Caño 38"] = st.number_input("Caño 38 (USD/ML)", value=insumos["Caño 38"], format="%.2f")
-    with col_c2:
-        st.markdown("### 🔹 Zócalos y Lineales")
-        insumos["Zócalo DAVID"] = st.number_input("Zócalo DAVID (USD/ML)", value=insumos["Zócalo DAVID"], format="%.2f")
-        insumos["Zócalo SS"] = st.number_input("Zócalo SS (USD/ML)", value=insumos["Zócalo SS"], format="%.2f")
-        insumos["CINTA"] = st.number_input("Cinta Doble Faz (USD/ML)", value=insumos["CINTA"], format="%.2f")
-        insumos["FIDEO"] = st.number_input("Fideo (USD/ML)", value=insumos["FIDEO"], format="%.2f")
-        insumos["Fleje"] = st.number_input("Fleje (USD/ML)", value=insumos["Fleje"], format="%.2f")
-    with col_c3:
-        st.markdown("### 🔹 Sistemas y Logística")
-        insumos["Mecanismo J32"] = st.number_input("Mecanismo J32 (USD)", value=insumos["Mecanismo J32"], format="%.2f")
-        insumos["Mecanismo J38"] = st.number_input("Mecanismo J38 (USD)", value=insumos["Mecanismo J38"], format="%.2f")
-        insumos["Soporte DAVID J32 DOBLE"] = st.number_input("Soporte J32 DOBLE (USD)", value=insumos["Soporte DAVID J32 DOBLE"], format="%.2f")
-        insumos["Soporte J38 DOBLE"] = st.number_input("Soporte J38 DOBLE (USD)", value=insumos["Soporte J38 DOBLE"], format="%.2f")
-        insumos["CONTRAPESO CADENA"] = st.number_input("Contrapeso (USD)", value=insumos["CONTRAPESO CADENA"], format="%.2f")
-        insumos["CADENA PLÁSTICA"] = st.number_input("Cadena Plástica (USD/ML)", value=insumos["CADENA PLÁSTICA"], format="%.2f")
-        insumos["FLETE"] = st.number_input("Flete por Unidad (USD)", value=insumos["FLETE"], format="%.2f")
+# Buscá la sección o pestaña de costos e introducí este bloque:
+st.subheader("Configuración de Costos de Rollertue")
+    # 1. Creamos el campo de texto oculto para la contraseña
+password_ingresada = st.text_input("Introduzca la clave de administrador para modificar los costos:", type="password")
+if password_ingresada == st.secrets["PASSWORD_COSTOS"]:
+        st.success("¡Acceso concedido, Maxi!")
+        with tab_config:
+            st.header("⚙️ Configuración Global del Sistema")
+            col_d, _ = st.columns([1, 2])
+            with col_d:
+                st.session_state['dolar'] = st.number_input("Cotización del Dólar (ARS):", min_value=1.0, value=st.session_state['dolar'], step=10.0)
+            
+            st.markdown("---")
+            col_f1, col_f2 = st.columns(2)
+            with col_f1:
+                st.subheader("📊 Módulo de Márgenes Financieros")
+                st.session_state['margen_rentabilidad'] = st.number_input("Rentabilidad sobre Costo (%)", min_value=0.0, value=st.session_state['margen_rentabilidad'])
+                st.session_state['componente_financiero'] = st.number_input("Componente Financiero para Lista (%)", min_value=0.0, value=st.session_state['componente_financiero'])
+                st.session_state['desc_3_cuotas'] = st.number_input("Descuento en 3 Cuotas Fijas (%)", min_value=0.0, value=st.session_state['desc_3_cuotas'])
+                st.session_state['desc_tarjeta'] = st.number_input("Descuento 1 pago Tarjeta (%)", min_value=0.0, value=st.session_state['desc_tarjeta'])
+                st.session_state['desc_efectivo'] = st.number_input("Descuento Efectivo (%)", min_value=0.0, value=st.session_state['desc_efectivo'])
+            with col_f2:
+                st.subheader("🚚 Módulo de Servicios e Instalaciones ($ ARS)")
+                st.session_state['toma_medidas'] = st.number_input("Servicio Toma de Medidas ($)", min_value=0.0, value=st.session_state['toma_medidas'], step=1000.0)
+                st.session_state['inst_jdla_1ra'] = st.number_input("JDLA - Instalación 1ra Cortina ($)", min_value=0.0, value=st.session_state['inst_jdla_1ra'], step=1000.0)
+                st.session_state['inst_sma_1ra'] = st.number_input("SMA - Instalación 1ra Cortina ($)", min_value=0.0, value=st.session_state['inst_sma_1ra'], step=1000.0)
+                st.session_state['inst_adicional'] = st.number_input("Valor Cortina Adicional ($)", min_value=0.0, value=st.session_state['inst_adicional'], step=1000.0)
 
+            st.markdown("---")
+            st.subheader("🛠️ Costo Base de Componentes (Valores en USD)")
+            insumos = st.session_state['precios_insumos']
+            col_c1, col_c2, col_c3 = st.columns(3)
+            with col_c1:
+                st.markdown("### 🔹 Telas y Caños")
+                insumos["BO 520"] = st.number_input("Tela BO 520 (USD/m²)", value=insumos["BO 520"], format="%.2f")
+                insumos["SS OPTIMA 5%"] = st.number_input("Tela SS OPTIMA 5% (USD/m²)", value=insumos["SS OPTIMA 5%"], format="%.2f")
+                insumos["ECO BOH"] = st.number_input("Tela ECO BOH (USD/m²)", value=insumos["ECO BOH"], format="%.2f")
+                insumos["Caño 32"] = st.number_input("Caño 32 (USD/ML)", value=insumos["Caño 32"], format="%.2f")
+                insumos["Caño 38"] = st.number_input("Caño 38 (USD/ML)", value=insumos["Caño 38"], format="%.2f")
+            with col_c2:
+                st.markdown("### 🔹 Zócalos y Lineales")
+                insumos["Zócalo DAVID"] = st.number_input("Zócalo DAVID (USD/ML)", value=insumos["Zócalo DAVID"], format="%.2f")
+                insumos["Zócalo SS"] = st.number_input("Zócalo SS (USD/ML)", value=insumos["Zócalo SS"], format="%.2f")
+                insumos["CINTA"] = st.number_input("Cinta Doble Faz (USD/ML)", value=insumos["CINTA"], format="%.2f")
+                insumos["FIDEO"] = st.number_input("Fideo (USD/ML)", value=insumos["FIDEO"], format="%.2f")
+                insumos["Fleje"] = st.number_input("Fleje (USD/ML)", value=insumos["Fleje"], format="%.2f")
+            with col_c3:
+                st.markdown("### 🔹 Sistemas y Logística")
+                insumos["Mecanismo J32"] = st.number_input("Mecanismo J32 (USD)", value=insumos["Mecanismo J32"], format="%.2f")
+                insumos["Mecanismo J38"] = st.number_input("Mecanismo J38 (USD)", value=insumos["Mecanismo J38"], format="%.2f")
+                insumos["Soporte DAVID J32 DOBLE"] = st.number_input("Soporte J32 DOBLE (USD)", value=insumos["Soporte DAVID J32 DOBLE"], format="%.2f")
+                insumos["Soporte J38 DOBLE"] = st.number_input("Soporte J38 DOBLE (USD)", value=insumos["Soporte J38 DOBLE"], format="%.2f")
+                insumos["CONTRAPESO CADENA"] = st.number_input("Contrapeso (USD)", value=insumos["CONTRAPESO CADENA"], format="%.2f")
+                insumos["CADENA PLÁSTICA"] = st.number_input("Cadena Plástica (USD/ML)", value=insumos["CADENA PLÁSTICA"], format="%.2f")
+                insumos["FLETE"] = st.number_input("Flete por Unidad (USD)", value=insumos["FLETE"], format="%.2f")
+else:
+    if password_ingresada != "":
+        st.error("Contraseña incorrecta. Acceso denegado.")
+    else:
+        st.warning("Esta sección está protegida. Ingrese la contraseña para ver el contenido.")
 # =========================================================
 # PESTAÑA: PANEL DE COTIZACIÓN
 # =========================================================
