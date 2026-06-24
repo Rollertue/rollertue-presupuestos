@@ -364,7 +364,7 @@ with tab_cotizador:
                     story.append(Spacer(1, 20))
                     story.append(Paragraph("<font color='#718096'>* Seña Contado o Transferencia 60% .- resto al finalizar el trabajo.</font>", style_sub))
                     story.append(Paragraph("<font color='#718096'>* Los precios de lista no incluyen bonificaciones por pago en efectivo. Validez de la cotización: 5 días.</font>", style_sub))
-                    story.append(Paragraph("<font color='#718096'>* El valor presupuestado no contempla trabajos en altura ni instalaciones que requieran andamios o escaleras especiales.</font>", style_sub))
+                    story.append(Paragraph("<font color='#718096'>* El valor presupuestado en la instalacion no contempla trabajos en altura ni instalaciones que requieran andamios o escaleras especiales.</font>", style_sub))
                     
                     doc.build(story)
                     pdf_buffer.seek(0)
