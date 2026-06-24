@@ -181,11 +181,29 @@ with tab_cotizador:
         precio_lista_total_item = precio_lista_unitario_fijo * float(cantidad)
 
         st.markdown("#### 🔍 Despiece Unitario de Control")
+       # =========================================================
+        # REEMPLAZÁ EXCLUSIVAMENTE ESTE BLOQUE CORREGIDO CON .get()
+        # =========================================================
         desglose_auditoria = [
-            {"Componente": f"Tela: {tipo_tela}", "Cantidad": cant_tela_m2, "Subtotal USD": cant_tela_m2 * p_i[tipo_tela]},
-            {"Componente": f"Estructura: {n_cano}", "Cantidad": cant_cano_ml, "Subtotal USD": cant_cano_ml * p_i[n_cano]},
-            {"Componente": f"Terminación: {tipo_zocalo}", "Cantidad": cant_zocalo_ml, "Subtotal USD": cant_zocalo_ml * p_i[tipo_zocalo]}
+            {
+                "Componente": f"Tela: {tipo_tela}", 
+                "Cantidad": cant_tela_m2, 
+                "Subtotal USD": cant_tela_m2 * p_i.get(tipo_tela, 0.0)
+            },
+            {
+                "Componente": f"Estructura: {n_cano}", 
+                "Cantidad": cant_cano_ml, 
+                "Subtotal USD": cant_cano_ml * p_i.get(n_cano, 0.0)
+            },
+            {
+                "Componente": f"Terminación: {tipo_zocalo}", 
+                "Cantidad": cant_zocalo_ml, 
+                "Subtotal USD": cant_zocalo_ml * p_i.get(tipo_zocalo, 0.0)
+            }
         ]
+        # =========================================================
+        # HASTA ACÁ (El código inferior de st.dataframe queda intacto)
+        # =========================================================
         df_vis = pd.DataFrame(desglose_auditoria)
         df_vis["Subtotal ARS"] = df_vis["Subtotal USD"] * t_c
         st.dataframe(df_vis[["Componente", "Cantidad", "Subtotal USD", "Subtotal ARS"]], use_container_width=True, hide_index=True)
