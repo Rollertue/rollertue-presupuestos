@@ -5,10 +5,16 @@ from supabase import create_client, Client
 import io
 import json  
 
+# Importaciones específicas de ReportLab para el PDF
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+
 # CONFIGURACIÓN ESTÉTICA DE LA APP
 st.set_page_config(page_title="Rollertue Comercial Cloud", layout="wide")
 st.title("📐 Sistema de Cotización y Presupuestos - Rollertue")
-st.caption("Módulo Avanzado: Persistencia de Costos en la Nube e Historial Cloud")
+st.caption("Módulo Avanzado: Exportación a PDF Profesional y Persistencia Cloud")
 st.markdown("---")
 
 # =========================================================
@@ -35,7 +41,6 @@ def cargar_precios_insumos():
             return res.data[0]["valores"]
     except:
         pass
-    # Valores de respaldo por si falla la red
     return {
         "BO 520": 5.00, "SS OPTIMA 5%": 5.50, "ECO BOH": 0.00,
         "Caño 32": 3.33, "Caño 38": 4.33, "Caño 32 Ref": 3.33,
@@ -47,11 +52,9 @@ def cargar_precios_insumos():
         "ACCESORIOS CADENA": 0.18, "FLETE": 2.50
     }
 
-# Inicializar precios en el estado de sesión si no existen
 if 'precios_insumos' not in st.session_state:
     st.session_state['precios_insumos'] = cargar_precios_insumos()
 
-# Persistencia de variables globales básicas
 if 'dolar' not in st.session_state:
     st.session_state['dolar'] = 1570.0  
 if 'carrito' not in st.session_state:
@@ -172,14 +175,7 @@ with tab_cotizador:
         desglose_auditoria = [
             {"Componente": f"Tela: {tipo_tela}", "Cantidad": cant_tela_m2, "Subtotal USD": cant_tela_m2 * p_i[tipo_tela]},
             {"Componente": f"Estructura: {n_cano}", "Cantidad": cant_cano_ml, "Subtotal USD": cant_cano_ml * p_i[n_cano]},
-            {"Componente": f"Terminación: {tipo_zocalo}", "Cantidad": cant_zocalo_ml, "Subtotal USD": cant_zocalo_ml * p_i[tipo_zocalo]},
-            {"Componente": "Cinta Doble Faz", "Cantidad": (ancho_m * 2) * multiplicador, "Subtotal USD": ((ancho_m * 2) * multiplicador) * p_i["CINTA"]},
-            {"Componente": "Fideo de Agarre", "Cantidad": ancho_m * multiplicador, "Subtotal USD": (ancho_m * multiplicador) * p_i["FIDEO"]},
-            {"Componente": "Fleje de Peso", "Cantidad": ancho_m * f_desp * multiplicador, "Subtotal USD": (ancho_m * f_desp * multiplicador) * p_i["Fleje"]},
-            {"Componente": f"Sistema: {n_mec}", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i[n_mec]},
-            {"Componente": "Cadena de Mando", "Cantidad": float(4.0 * multiplicador), "Subtotal USD": float(4.0 * multiplicador) * p_i["CADENA PLÁSTICA"]},
-            {"Componente": "Contrapeso Cadena", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i["CONTRAPESO CADENA"]},
-            {"Componente": "Flete Logístico", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i["FLETE"]}
+            {"Componente": f"Terminación: {tipo_zocalo}", "Cantidad": cant_zocalo_ml, "Subtotal USD": cant_zocalo_ml * p_i[tipo_zocalo]}
         ]
         df_vis = pd.DataFrame(desglose_auditoria)
         df_vis["Subtotal ARS"] = df_vis["Subtotal USD"] * t_c
@@ -242,49 +238,113 @@ with tab_cotizador:
             
             st.markdown("---")
             
-            # ---------------------------------------------------------
-            # MÓDULO GENERADOR DE ARCHIVO COMERCIAL DE RESPALDO (PDF / TXT)
-            # ---------------------------------------------------------
+            # =========================================================
+            # MOTOR EXCLUSIVO: GENERADOR DE PDF PROFESIONAL (REPORTLAB)
+            # =========================================================
             st.subheader("📥 Exportación Comercial")
-            
             id_compuesto_archivo = f"PR-{nro_presupuesto:05d}-V{version_presupuesto}"
             
-            # Construcción de un reporte estructurado en memoria limpia
-            buffer_reporte = io.BytesIO()
-            lineas_reporte = []
-            lineas_reporte.append("==================================================")
-            lineas_reporte.append(f"  PRESUPUESTO COMERCIAL - ROLLERTUE CORTINAS")
-            lineas_reporte.append("==================================================")
-            lineas_reporte.append(f"Referencia: {id_compuesto_archivo}")
-            lineas_reporte.append(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
-            lineas_reporte.append(f"Cliente: {cliente_global if cliente_global else 'Consumidor Final'}")
-            lineas_reporte.append(f"Logística: {detalle_instalacion_texto}")
-            lineas_reporte.append("--------------------------------------------------\n")
-            lineas_reporte.append("DETALLE DE LAS UNIDADES:")
+            if st.button("📄 GENERAR PRESUPUESTO PDF", use_container_width=True, type="secondary"):
+                try:
+                    # 1. Crear el buffer de memoria
+                    pdf_buffer = io.BytesIO()
+                    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+                    story = []
+                    
+                    # 2. Configuración de estilos estéticos
+                    styles = getSampleStyleSheet()
+                    style_titulo = ParagraphStyle('TituloRepo', parent=styles['Heading1'], fontSize=22, textColor=colors.HexColor('#1A365D'), spaceAfter=6)
+                    style_sub = ParagraphStyle('SubRepo', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#718096'), spaceAfter=15)
+                    style_h2 = ParagraphStyle('H2Repo', parent=styles['Heading2'], fontSize=14, textColor=colors.HexColor('#2B6CB0'), spaceBefore=12, spaceAfter=8)
+                    style_texto = ParagraphStyle('TextoRepo', parent=styles['Normal'], fontSize=11, leading=14, textColor=colors.HexColor('#2D3748'))
+                    style_negrita = ParagraphStyle('NegritaRepo', parent=style_texto, fontName='Helvetica-Bold')
+                    
+                    # 3. Encabezado institucional de Rollertue
+                    story.append(Paragraph("<b>ROLLERTUE CORTINAS ROLLER</b>", style_titulo))
+                    story.append(Paragraph(f"Fábrica de Cortinas | Junín de los Andes, Neuquén | WhatsApp: 2944-160866", style_sub))
+                    story.append(Spacer(1, 10))
+                    
+                    # 4. Datos del Presupuesto
+                    nombre_documento_cliente = cliente_global if cliente_global.strip() != "" else "Consumidor Final"
+                    story.append(Paragraph(f"<b>Presupuesto N°:</b> {id_compuesto_archivo}", style_texto))
+                    story.append(Paragraph(f"<b>Fecha de Emisión:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_texto))
+                    story.append(Paragraph(f"<b>Cliente:</b> {nombre_documento_cliente}", style_texto))
+                    story.append(Paragraph(f"<b>Logística/Instalación:</b> {detalle_instalacion_texto}", style_texto))
+                    story.append(Spacer(1, 15))
+                    
+                    # 5. Construcción de Tabla de Productos
+                    story.append(Paragraph("Detalle del Pedido", style_h2))
+                    tabla_datos = [["Cantidad", "Detalle del Producto", "Precio Total (Lista)"]]
+                    
+                    for sub_item in st.session_state['carrito']:
+                        tabla_datos.append([
+                            str(sub_item['Cantidad']),
+                            sub_item['Detalle Producto'],
+                            f"$ {sub_item['Precio Lista Total ($)']:,.0f}"
+                        ])
+                    
+                    t_tabla = Table(tabla_datos, colWidths=[60, 340, 120])
+                    t_tabla.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                        ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
+                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                        ('FONTSIZE', (0, 0), (-1, 0), 11),
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F7FAFC')),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
+                        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                        ('FONTSIZE', (0, 1), (-1, -1), 10),
+                        ('TOPPADDING', (0, 1), (-1, -1), 6),
+                        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+                    ]))
+                    story.append(t_tabla)
+                    story.append(Spacer(1, 20))
+                    
+                    # 6. Cuadro de Liquidación y Condiciones Financieras
+                    story.append(Paragraph("Liquidación Comercial y Formas de Pago", style_h2))
+                    
+                    datos_liquidacion = [
+                        [Paragraph("<b>TOTAL CONTADO EFECTIVO / TRANSFERENCIA:</b>", style_texto), Paragraph(f"<b>$ {t_efectivo_final_neto:,.0f}</b>", style_negrita)],
+                        [Paragraph("Precio Base de Lista (Financiado):", style_texto), f"$ {gran_total_lista:,.0f}"],
+                        [Paragraph("Opción 3 Cuotas Fijas:", style_texto), f"3 cuotas de $ {t_3_cuotas/3:,.0f} (Total: $ {t_3_cuotas:,.0f})"],
+                        [Paragraph("Opción Tarjeta 1 Pago:", style_texto), f"$ {t_tarjeta:,.0f}"]
+                    ]
+                    
+                    t_liq = Table(datos_liquidacion, colWidths=[350, 170])
+                    t_liq.setStyle(TableStyle([
+                        ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.HexColor('#1AA845')),
+                        ('TOPPADDING', (0, 0), (-1, -1), 5),
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+                    ]))
+                    story.append(t_liq)
+                    
+                    story.append(Spacer(1, 30))
+                    story.append(Paragraph("<font color='#718096'>* Los precios de lista no incluyen bonificaciones por pago en efectivo. Validez de la cotización: 5 días.</font>", style_sub))
+                    
+                    # 7. Compilar el documento
+                    doc.build(story)
+                    pdf_buffer.seek(0)
+                    
+                    # 8. Almacenar el PDF en el estado de sesión para habilitar la descarga limpia
+                    st.session_state['pdf_listo'] = pdf_buffer.getvalue()
+                    st.session_state['pdf_nombre'] = f"Presupuesto_{id_compuesto_archivo}_{nombre_documento_cliente.replace(' ', '_')}.pdf"
+                    st.success("¡PDF compilado con éxito en memoria!")
+                    
+                except Exception as pdf_ex:
+                    st.error(f"Error técnico al estructurar el PDF: {pdf_ex}")
             
-            for sub_item in st.session_state['carrito']:
-                lineas_reporte.append(f"- {sub_item['Cantidad']} u. x {sub_item['Detalle Producto']} -> Lista Total: ${sub_item['Precio Lista Total ($)']:,.0f}")
-            
-            lineas_reporte.append("\n--------------------------------------------------")
-            lineas_reporte.append(f"PRECIO BASE LISTA FINANCIADO: $ {gran_total_lista:,.0f}")
-            lineas_reporte.append(f"VALOR TOTAL EFECTIVO/TRANSFERENCIA: $ {t_efectivo_final_neto:,.0f}")
-            lineas_reporte.append(f"OPCIÓN 3 CUOTAS FIJAS: 3 de ${t_3_cuotas/3:,.0f} (Total: ${t_3_cuotas:,.0f})")
-            lineas_reporte.append(f"OPCIÓN TARJETA 1 PAGO: $ {t_tarjeta:,.0f}")
-            lineas_reporte.append("==================================================")
-            lineas_reporte.append(" Validez del presupuesto: 5 días debido a volatilidad.")
-            
-            texto_final_reporte = "\n".join(lineas_reporte)
-            buffer_reporte.write(texto_final_reporte.encode('utf-8'))
-            buffer_reporte.seek(0)
-            
-            # Botón nativo de descarga directo al almacenamiento local
-            st.download_button(
-                label="📄 GENERAR Y DESCARGAR COMPROBANTE",
-                data=buffer_reporte,
-                file_name=f"Presupuesto_{id_compuesto_archivo}_{cliente_global.replace(' ', '_')}.txt",
-                mime="text/plain",
-                use_container_width=True
-            )
+            # Botón dinámico de descarga nativa (Solo aparece si el PDF está creado)
+            if 'pdf_listo' in st.session_state:
+                st.download_button(
+                    label="📥 DESCARGAR DOCUMENTO PDF AHORA",
+                    data=st.session_state['pdf_listo'],
+                    file_name=st.session_state['pdf_nombre'],
+                    mime="application/pdf",
+                    use_container_width=True
+                )
             
             st.markdown("---")
             if st.button("🚀 SYNC INTERNET: GUARDAR EN LA NUBE", use_container_width=True, type="primary"):
@@ -306,6 +366,8 @@ with tab_cotizador:
                         
                         st.success(f"¡Orden {id_compuesto} fijada online!")
                         st.session_state['carrito'] = []
+                        if 'pdf_listo' in st.session_state:
+                            del st.session_state['pdf_listo']
                         st.session_state['edit_cliente'] = ""
                         st.session_state['edit_nro'] = 160
                         st.session_state['edit_ver'] = 1
@@ -316,26 +378,24 @@ with tab_cotizador:
             st.info("Presupuesto vacío. Agregue cortinas desde el panel izquierdo.")
 
 # =========================================================
-# PESTAÑA: CONFIGURACIÓN FINANCIERA Y PRECIOS (🔐 CANDADO REUBICADO)
+# PESTAÑA: CONFIGURACIÓN FINANCIERA Y PRECIOS (🔐 PRIVADO)
 # =========================================================
 with tab_config:
     st.header("⚙️ Configuración Global e Insumos del Taller")
     st.markdown("---")
     
-    # 1. El candado ahora opera estrictamente encapsulado dentro de su pestaña
     password_ingresada = st.text_input("🔐 Introduzca la clave de administrador para modificar los costos:", type="password")
     
     if password_ingresada == st.secrets["PASSWORD_COSTOS"]:
         st.success("¡Acceso concedido, Maxi!")
         
-        # Botón principal para fijar costos en Supabase
         if st.button("💾 GUARDAR PRECIOS PERMANENTES EN LA NUBE", type="primary", use_container_width=True):
             try:
                 supabase.table("config_insumos").upsert({
                     "id": "lista_precios",
                     "valores": st.session_state['precios_insumos']
                 }).execute()
-                st.success("¡Costos de insumos sincronizados de forma permanente! No tendrás que reconfigurarlos al reiniciar.")
+                st.success("¡Costos de insumos sincronizados de forma permanente!")
             except Exception as ex:
                 st.error(f"Error al guardar costos en Supabase: {ex}")
 
@@ -356,7 +416,10 @@ with tab_config:
         with col_f2:
             st.subheader("🚚 Módulo de Servicios e Instalaciones ($ ARS)")
             st.session_state['toma_medidas'] = st.number_input("Servicio Toma de Medidas ($)", min_value=0.0, value=st.session_state['toma_medidas'], step=1000.0)
-            st.session_state['inst_jdla_1ra'] = st.number_input("JDLA - Instalación 1ra Cortina ($)", min_value=0.0, value=st.session_value['inst_jdla_1ra'], step=1000.0) if 'inst_jdla_1ra' in st.session_state else st.number_input("JDLA - Instalación 1ra Cortina ($)", min_value=0.0, value=35000.0, step=1000.0)
+            
+            # Corrección del estado para evitar caídas silenciosas
+            val_jdla_init = st.session_state['inst_jdla_1ra'] if 'inst_jdla_1ra' in st.session_state else 35000.0
+            st.session_state['inst_jdla_1ra'] = st.number_input("JDLA - Instalación 1ra Cortina ($)", min_value=0.0, value=val_jdla_init, step=1000.0)
             st.session_state['inst_sma_1ra'] = st.number_input("SMA - Instalación 1ra Cortina ($)", min_value=0.0, value=st.session_state['inst_sma_1ra'], step=1000.0)
             st.session_state['inst_adicional'] = st.number_input("Valor Cortina Adicional ($)", min_value=0.0, value=st.session_state['inst_adicional'], step=1000.0)
 
@@ -391,7 +454,7 @@ with tab_config:
         if password_ingresada != "":
             st.error("❌ Contraseña incorrecta. Acceso denegado.")
         else:
-            st.warning("🔒 Esta pestaña contiene información financiera crítica. Ingrese la clave de administrador de Rollertue para desplegar los controles.")
+            st.warning("🔒 Esta pestaña contiene información financiera crítica. Ingrese la clave de administrador para desplegar los controles.")
 
 # =========================================================
 # PESTAÑA: HISTORIAL CLOUD 
