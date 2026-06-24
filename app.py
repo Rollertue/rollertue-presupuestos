@@ -149,21 +149,30 @@ with tab_cotizador:
         cant_cano_ml = ancho_m * f_desp * multiplicador
         cant_zocalo_ml = ancho_m * f_desp * multiplicador
         
+        # =========================================================
+        # PROTECCIÓN COPIAR DESDE ACÁ: BLINDAJE CONTRA KEYERROR
+        # =========================================================
+        precio_tela_seleccionada = p_i.get(tipo_tela, 0.0)
+        precio_zocalo_seleccionado = p_i.get(tipo_zocalo, 0.0)
+        
         costo_unitario_usd = (
-            (cant_tela_m2 * p_i[tipo_tela]) +  
-            (cant_cano_ml * p_i[n_cano]) +                         
-            (cant_zocalo_ml * p_i[tipo_zocalo]) +                    
-            (((ancho_m * 2) * multiplicador) * p_i["CINTA"]) +                           
-            ((ancho_m * multiplicador) * p_i["FIDEO"]) +                                 
-            ((ancho_m * f_desp * multiplicador) * p_i["Fleje"]) +                        
-            ((1 * multiplicador) * p_i[n_mec]) +                                         
-            ((4.0 * multiplicador) * p_i["CADENA PLÁSTICA"]) +                           
-            ((1 * multiplicador) * p_i["CONTRAPESO CADENA"]) +  
-            ((1 * multiplicador) * p_i["ACCESORIOS CADENA"]) +                           
-            ((1 * multiplicador) * p_i["FLETE"])                                         
+            (cant_tela_m2 * precio_tela_seleccionada) +  
+            (cant_cano_ml * p_i.get(n_cano, 0.0)) +                         
+            (cant_zocalo_ml * precio_zocalo_seleccionado) +                    
+            (((ancho_m * 2) * multiplicador) * p_i.get("CINTA", 0.0)) +                           
+            ((ancho_m * multiplicador) * p_i.get("FIDEO", 0.0)) +                                 
+            ((ancho_m * f_desp * multiplicador) * p_i.get("Fleje", 0.0)) +                        
+            ((1 * multiplicador) * p_i.get(n_mec, 0.0)) +                                         
+            ((4.0 * multiplicador) * p_i.get("CADENA PLÁSTICA", 0.0)) +                           
+            ((1 * multiplicador) * p_i.get("CONTRAPESO CADENA", 0.0)) +  
+            ((1 * multiplicador) * p_i.get("ACCESORIOS CADENA", 0.0)) +                           
+            ((1 * multiplicador) * p_i.get("FLETE", 0.0))                                         
         )
         if es_doble:
-            costo_unitario_usd += (1.0 * p_i[n_sop_d])
+            costo_unitario_usd += (1.0 * p_i.get(n_sop_d, 0.0))
+        # =========================================================
+        # HASTA ACÁ (El resto del código hacia abajo queda intacto)
+        # =========================================================
             
         costo_unitario_ars = costo_unitario_usd * t_c
         precio_venta_neto = costo_unitario_ars * (1 + (st.session_state['margen_rentabilidad'] / 100))
@@ -434,7 +443,7 @@ with tab_config:
             st.markdown("### 🔹 Telas y Caños")
             insumos["BO 520"] = st.number_input("Tela BO 520 (USD/m²)", value=float(insumos["BO 520"]), format="%.2f")
             insumos["SS OPTIMA 5%"] = st.number_input("Tela SS OPTIMA 5% (USD/m²)", value=float(insumos["SS OPTIMA 5%"]), format="%.2f")
-            insumos["DOBLE BO + SUNS"] = st.number_input("Tela DOBLE BO + SUNS (USD/m²)", value=float(insumos["DOBLE BO + SUNS"]), format="%.2f")
+            insumos["DOBLE BO + SUNS"] = st.number_input("Tela DOBLE BO + SUNS (USD/m²)", value=float(insumos.get["DOBLE BO + SUNS"]), format="%.2f")
             insumos["Caño 32"] = st.number_input("Caño 32 (USD/ML)", value=float(insumos["Caño 32"]), format="%.2f")
             insumos["Caño 38"] = st.number_input("Caño 38 (USD/ML)", value=float(insumos["Caño 38"]), format="%.2f")
         with col_c2:
