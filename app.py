@@ -185,22 +185,19 @@ with tab_cotizador:
         # REEMPLAZÁ EXCLUSIVAMENTE ESTE BLOQUE CORREGIDO CON .get()
         # =========================================================
         desglose_auditoria = [
-            {
-                "Componente": f"Tela: {tipo_tela}", 
-                "Cantidad": cant_tela_m2, 
-                "Subtotal USD": cant_tela_m2 * p_i.get(tipo_tela, 0.0)
-            },
-            {
-                "Componente": f"Estructura: {n_cano}", 
-                "Cantidad": cant_cano_ml, 
-                "Subtotal USD": cant_cano_ml * p_i.get(n_cano, 0.0)
-            },
-            {
-                "Componente": f"Terminación: {tipo_zocalo}", 
-                "Cantidad": cant_zocalo_ml, 
-                "Subtotal USD": cant_zocalo_ml * p_i.get(tipo_zocalo, 0.0)
-            }
+            {"Componente": f"Tela: {tipo_tela}", "Cantidad": cant_tela_m2, "Subtotal USD": cant_tela_m2 * p_i.get(tipo_tela, 0.0)},
+            {"Componente": f"Estructura: {n_cano}", "Cantidad": cant_cano_ml, "Subtotal USD": cant_cano_ml * p_i.get(n_cano, 0.0)},
+            {"Componente": f"Terminación: {tipo_zocalo}", "Cantidad": cant_zocalo_ml, "Subtotal USD": cant_zocalo_ml * p_i.get(tipo_zocalo, 0.0)},
+            {"Componente": "Cinta Doble Faz", "Cantidad": (ancho_m * 2) * multiplicador, "Subtotal USD": ((ancho_m * 2) * multiplicador) * p_i.get("CINTA", 0.0)},
+            {"Componente": "Fideo de Agarre", "Cantidad": ancho_m * multiplicador, "Subtotal USD": (ancho_m * multiplicador) * p_i.get("FIDEO", 0.0)},
+            {"Componente": "Fleje de Peso", "Cantidad": ancho_m * f_desp * multiplicador, "Subtotal USD": (ancho_m * f_desp * multiplicador) * p_i.get("Fleje", 0.0)},
+            {"Componente": f"Sistema: {n_mec}", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i.get(n_mec, 0.0)},
+            {"Componente": "Cadena de Mando", "Cantidad": float(4.0 * multiplicador), "Subtotal USD": float(4.0 * multiplicador) * p_i.get("CADENA PLÁSTICA", 0.0)},
+            {"Componente": "Contrapeso Cadena", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i.get("CONTRAPESO CADENA", 0.0)},
+            {"Componente": "Flete Logístico", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i.get("FLETE", 0.0)}
         ]
+        if es_doble:
+            desglose_auditoria.append({"Componente": f"Soporte Doble: {n_sop_d}", "Cantidad": 1.0, "Subtotal USD": 1.0 * p_i.get(n_sop_d, 0.0)})
         # =========================================================
         # HASTA ACÁ (El código inferior de st.dataframe queda intacto)
         # =========================================================
