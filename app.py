@@ -461,7 +461,7 @@ with tab_config:
             st.markdown("### 🔹 Telas y Caños")
             insumos["BO 520"] = st.number_input("Tela BO 520 (USD/m²)", value=float(insumos["BO 520"]), format="%.2f")
             insumos["SS OPTIMA 5%"] = st.number_input("Tela SS OPTIMA 5% (USD/m²)", value=float(insumos["SS OPTIMA 5%"]), format="%.2f")
-            insumos["DOBLE BO + SUNS"] = st.number_input("Tela DOBLE BO + SUNS (USD/m²)", value=float(insumos.get["DOBLE BO + SUNS"]), format="%.2f")
+            insumos["DOBLE BO + SUNS"] = st.number_input("Tela DOBLE BO + SUNS (USD/m²)", value=float(insumos.get("DOBLE BO + SUNS", 0.0)), format="%.2f")
             insumos["Caño 32"] = st.number_input("Caño 32 (USD/ML)", value=float(insumos["Caño 32"]), format="%.2f")
             insumos["Caño 38"] = st.number_input("Caño 38 (USD/ML)", value=float(insumos["Caño 38"]), format="%.2f")
         with col_c2:
