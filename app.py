@@ -231,13 +231,18 @@ with tab_cotizador:
                     st.session_state['carrito'].pop(idx)
                     st.rerun()
             
+            # =========================================================
+            # LÓGICA DE TOTALES MODIFICADA (INSTALACIÓN COMO OPCIONAL)
+            # =========================================================
             st.markdown("---")
             df_carrito = pd.DataFrame(st.session_state['carrito'])
             gran_total_lista = df_carrito["Precio Lista Total ($)"].sum()
             total_unidades_cortinas = df_carrito["Cantidad"].sum()
             
+            # Calculamos el costo de instalación de forma separada
             costo_instalacion_final = 0.0
             detalle_instalacion_texto = "Retira de Fábrica"
+            
             if lugar_instalacion == "JDLA (Junín de los Andes)":
                 if total_unidades_cortinas > 0:
                     costo_instalacion_final = st.session_state['inst_jdla_1ra'] + ((total_unidades_cortinas - 1) * st.session_state['inst_adicional'])
@@ -247,15 +252,22 @@ with tab_cotizador:
                     costo_instalacion_final = st.session_state['inst_sma_1ra'] + ((total_unidades_cortinas - 1) * st.session_state['inst_adicional'])
                     detalle_instalacion_texto = f"Instalación SMA ({total_unidades_cortinas} u.)"
             
+            # El valor de las cortinas puro con descuento efectivo
             descuento_medicion_final = st.session_state['toma_medidas'] if aplica_toma_medidas else 0.0
             t_base_efectivo_cortinas = gran_total_lista * (1 - (st.session_state['desc_efectivo'] / 100))
-            t_efectivo_final_neto = t_base_efectivo_cortinas + costo_instalacion_final - descuento_medicion_final
+            
+            # TOTAL WEB: Refleja estrictamente el valor neto de las cortinas
+            t_efectivo_final_neto = t_base_efectivo_cortinas - descuento_medicion_final
             
             t_3_cuotas = gran_total_lista * (1 - (st.session_state['desc_3_cuotas'] / 100))
             t_tarjeta = gran_total_lista * (1 - (st.session_state['desc_tarjeta'] / 100))
             
-            st.markdown("<p style='margin-bottom:2px; font-size:14px; color:#555; font-weight:bold;'>VALOR TOTAL CONTADO EFECTIVO / TRANSFERENCIA</p>", unsafe_allow_html=True)
+            st.markdown("<p style='margin-bottom:2px; font-size:14px; color:#555; font-weight:bold;'>VALOR TOTAL CORTINAS (CONTADO EFECTIVO / TRANSFERENCIA)</p>", unsafe_allow_html=True)
             st.markdown(f"<h1 style='color:#1aa845; font-size:48px; margin-top:0px; margin-bottom:2px;'>$ {t_efectivo_final_neto:,.0f}</h1>", unsafe_allow_html=True)
+            
+            # Mostramos visualmente el opcional en la interfaz para control tuyo
+            if costo_instalacion_final > 0:
+                st.markdown(f"<p style='font-size:14px; color:#2B6CB0; margin-top:0px;'>📍 <b>Opcional Instalación y Entrega:</b> $ {costo_instalacion_final:,.0f} (Efectivo)</p>", unsafe_allow_html=True)
             
             st.markdown(f"<p style='font-size:13px; color:#777; margin-top:5px;'>Precio de Lista Base (Financiado): $ {gran_total_lista:,.0f}</p>", unsafe_allow_html=True)
             st.markdown("---")
@@ -274,12 +286,10 @@ with tab_cotizador:
             
             if st.button("📄 GENERAR PRESUPUESTO PDF", use_container_width=True, type="secondary"):
                 try:
-                    # 1. Crear el buffer de memoria
                     pdf_buffer = io.BytesIO()
                     doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
                     story = []
                     
-                    # 2. Configuración de estilos estéticos
                     styles = getSampleStyleSheet()
                     style_titulo = ParagraphStyle('TituloRepo', parent=styles['Heading1'], fontSize=22, textColor=colors.HexColor('#1A365D'), spaceAfter=6)
                     style_sub = ParagraphStyle('SubRepo', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#718096'), spaceAfter=15)
@@ -287,20 +297,16 @@ with tab_cotizador:
                     style_texto = ParagraphStyle('TextoRepo', parent=styles['Normal'], fontSize=11, leading=14, textColor=colors.HexColor('#2D3748'))
                     style_negrita = ParagraphStyle('NegritaRepo', parent=style_texto, fontName='Helvetica-Bold')
                     
-                    # 3. Encabezado institucional de Rollertue
                     story.append(Paragraph("<b>ROLLERTUE CORTINAS ROLLER</b>", style_titulo))
                     story.append(Paragraph(f"Fábrica de Cortinas | Junín de los Andes, Neuquén | WhatsApp: 2944-160866", style_sub))
                     story.append(Spacer(1, 10))
                     
-                    # 4. Datos del Presupuesto
                     nombre_documento_cliente = cliente_global if cliente_global.strip() != "" else "Consumidor Final"
                     story.append(Paragraph(f"<b>Presupuesto N°:</b> {id_compuesto_archivo}", style_texto))
                     story.append(Paragraph(f"<b>Fecha de Emisión:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_texto))
                     story.append(Paragraph(f"<b>Cliente:</b> {nombre_documento_cliente}", style_texto))
-                    story.append(Paragraph(f"<b>Logística/Instalación:</b> {detalle_instalacion_texto}", style_texto))
                     story.append(Spacer(1, 15))
                     
-                    # 5. Construcción de Tabla de Productos
                     story.append(Paragraph("Detalle del Pedido", style_h2))
                     tabla_datos = [["Cantidad", "Detalle del Producto", "Precio Total (Lista)"]]
                     
@@ -330,7 +336,6 @@ with tab_cotizador:
                     story.append(t_tabla)
                     story.append(Spacer(1, 20))
                     
-                    # 6. Cuadro de Liquidación y Condiciones Financieras
                     story.append(Paragraph("Formas de Pago", style_h2))
                     
                     datos_liquidacion = [
@@ -339,6 +344,13 @@ with tab_cotizador:
                         [Paragraph("30% De Descuento y 3 Cuotas Fijas:", style_texto), f"3 cuotas de $ {t_3_cuotas/3:,.0f} (Total: $ {t_3_cuotas:,.0f})"],
                         [Paragraph("35% de Descuento Tarjeta 1 Pago:", style_texto), f"$ {t_tarjeta:,.0f}"]
                     ]
+                    
+                    # SI ELIGIÓ LOGÍSTICA, INYECTAMOS EL RENGLÓN OPCIONAL SEPARADO EN LA LIQUIDACIÓN
+                    if costo_instalacion_final > 0:
+                        datos_liquidacion.append([
+                            Paragraph(f"<i>* Opcional instalación profesional y entrega en domicilio:</i>", style_texto),
+                            Paragraph(f"<i>$ {costo_instalacion_final:,.0f}</i>", style_negrita)
+                        ])
                     
                     t_liq = Table(datos_liquidacion, colWidths=[350, 170])
                     t_liq.setStyle(TableStyle([
@@ -349,17 +361,14 @@ with tab_cotizador:
                     ]))
                     story.append(t_liq)
                     
-                    story.append(Spacer(1, 30))
+                    story.append(Spacer(1, 20))
                     story.append(Paragraph("<font color='#718096'>* Seña Contado o Transferencia 60% .- resto al finalizar el trabajo.</font>", style_sub))
-                    story.append(Spacer(1, 30))
                     story.append(Paragraph("<font color='#718096'>* Los precios de lista no incluyen bonificaciones por pago en efectivo. Validez de la cotización: 5 días.</font>", style_sub))
-                    story.append(Spacer(1, 30))
-                    story.append(Paragraph("<font color='#718096'>*El valor presupuestado no contempla trabajos en altura ni instalaciones que requieran andamios o escaleras especiales..</font>", style_sub))
-                    # 7. Compilar el documento
+                    story.append(Paragraph("<font color='#718096'>* El valor presupuestado no contempla trabajos en altura ni instalaciones que requieran andamios o escaleras especiales.</font>", style_sub))
+                    
                     doc.build(story)
                     pdf_buffer.seek(0)
                     
-                    # 8. Almacenar el PDF en el estado de sesión para habilitar la descarga limpia
                     st.session_state['pdf_listo'] = pdf_buffer.getvalue()
                     st.session_state['pdf_nombre'] = f"Presupuesto_{id_compuesto_archivo}_{nombre_documento_cliente.replace(' ', '_')}.pdf"
                     st.success("¡PDF compilado con éxito en memoria!")
