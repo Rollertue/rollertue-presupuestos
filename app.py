@@ -303,13 +303,13 @@ with tab_cotizador:
                     story.append(Spacer(1, 20))
                     
                     # 6. Cuadro de Liquidación y Condiciones Financieras
-                    story.append(Paragraph("Liquidación Comercial y Formas de Pago", style_h2))
+                    story.append(Paragraph("Formas de Pago", style_h2))
                     
                     datos_liquidacion = [
-                        [Paragraph("<b>TOTAL CONTADO EFECTIVO / TRANSFERENCIA:</b>", style_texto), Paragraph(f"<b>$ {t_efectivo_final_neto:,.0f}</b>", style_negrita)],
-                        [Paragraph("Precio Base de Lista (Financiado):", style_texto), f"$ {gran_total_lista:,.0f}"],
-                        [Paragraph("Opción 3 Cuotas Fijas:", style_texto), f"3 cuotas de $ {t_3_cuotas/3:,.0f} (Total: $ {t_3_cuotas:,.0f})"],
-                        [Paragraph("Opción Tarjeta 1 Pago:", style_texto), f"$ {t_tarjeta:,.0f}"]
+                        [Paragraph("<b>40% DE DESCUENTO CONTADO EFECTIVO / TRANSFERENCIA:</b>", style_texto), Paragraph(f"<b>$ {t_efectivo_final_neto:,.0f}</b>", style_negrita)],
+                        [Paragraph("Precio de Lista:", style_texto), f"$ {gran_total_lista:,.0f}"],
+                        [Paragraph("30% De Descuento y 3 Cuotas Fijas:", style_texto), f"3 cuotas de $ {t_3_cuotas/3:,.0f} (Total: $ {t_3_cuotas:,.0f})"],
+                        [Paragraph("35% de Descuento Tarjeta 1 Pago:", style_texto), f"$ {t_tarjeta:,.0f}"]
                     ]
                     
                     t_liq = Table(datos_liquidacion, colWidths=[350, 170])
@@ -322,8 +322,11 @@ with tab_cotizador:
                     story.append(t_liq)
                     
                     story.append(Spacer(1, 30))
+                    story.append(Paragraph("<font color='#718096'>* Seña Contado o Transferencia 60% .- resto al finalizar el trabajo.</font>", style_sub))
+                    story.append(Spacer(1, 30))
                     story.append(Paragraph("<font color='#718096'>* Los precios de lista no incluyen bonificaciones por pago en efectivo. Validez de la cotización: 5 días.</font>", style_sub))
-                    
+                    story.append(Spacer(1, 30))
+                    story.append(Paragraph("<font color='#718096'>*El valor presupuestado no contempla trabajos en altura ni instalaciones que requieran andamios o escaleras especiales..</font>", style_sub))
                     # 7. Compilar el documento
                     doc.build(story)
                     pdf_buffer.seek(0)
