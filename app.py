@@ -296,7 +296,19 @@ with tab_cotizador:
                     style_h2 = ParagraphStyle('H2Repo', parent=styles['Heading2'], fontSize=14, textColor=colors.HexColor('#2B6CB0'), spaceBefore=12, spaceAfter=8)
                     style_texto = ParagraphStyle('TextoRepo', parent=styles['Normal'], fontSize=11, leading=14, textColor=colors.HexColor('#2D3748'))
                     style_negrita = ParagraphStyle('NegritaRepo', parent=style_texto, fontName='Helvetica-Bold')
-                    
+                    # =========================================================
+                    # AGREGÁ ESTE NUEVO ESTILO ACÁ (Tamaño 16, Negrita y Color Verde)
+                    # =========================================================
+                    style_precio_efectivo = ParagraphStyle(
+                        'PrecioEfectivo', 
+                        parent=styles['Normal'], 
+                        fontName='Helvetica-Bold', 
+                        fontSize=16,          # <-- Subilo a 18 o 20 si lo querés más grande aún
+                        leading=18, 
+                        textColor=colors.HexColor('#1AA845'), # Mantiene el verde comercial
+                        alignment=2           # Alineado a la derecha (RIGHT)
+                    )
+
                     story.append(Paragraph("<b>ROLLERTUE CORTINAS ROLLER</b>", style_titulo))
                     story.append(Paragraph(f"Fábrica de Cortinas | Junín de los Andes, Neuquén | WhatsApp: 2944-160866", style_sub))
                     story.append(Spacer(1, 10))
@@ -339,7 +351,9 @@ with tab_cotizador:
                     story.append(Paragraph("Formas de Pago", style_h2))
                     
                     datos_liquidacion = [
-                        [Paragraph("<b>40% DE DESCUENTO CONTADO EFECTIVO / TRANSFERENCIA:</b>", style_texto), Paragraph(f"<b>$ {t_efectivo_final_neto:,.0f}</b>", style_negrita)],
+                        # MODIFICÁ ESTE PRIMER RENGLÓN: Cambiá style_negrita por style_precio_efectivo
+                        [Paragraph("<b>40% DE DESCUENTO CONTADO EFECTIVO / TRANSFERENCIA:</b>", style_texto), Paragraph(f"$ {t_efectivo_final_neto:,.0f}", style_precio_efectivo)],
+                        
                         [Paragraph("Precio de Lista:", style_texto), f"$ {gran_total_lista:,.0f}"],
                         [Paragraph("30% De Descuento y 3 Cuotas Fijas:", style_texto), f"3 cuotas de $ {t_3_cuotas/3:,.0f} (Total: $ {t_3_cuotas:,.0f})"],
                         [Paragraph("35% de Descuento Tarjeta 1 Pago:", style_texto), f"$ {t_tarjeta:,.0f}"]
