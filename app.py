@@ -55,8 +55,11 @@ def cargar_precios_insumos():
 if 'precios_insumos' not in st.session_state:
     st.session_state['precios_insumos'] = cargar_precios_insumos()
 
+# MODIFICACIÓN REQUERIDA: LEER EL DÓLAR DESDE LA NUBE O USAR EL RESPALDO SI NO EXISTE
 if 'dolar' not in st.session_state:
-    st.session_state['dolar'] = 1570.0  
+    precios = st.session_state['precios_insumos']
+    # Busca la clave en la nube; si no está, usa 1570.0 por defecto
+    st.session_state['dolar'] = float(precios.get("VALOR_DOLAR_SISTEMA", 1570.0))  
 if 'carrito' not in st.session_state:
     st.session_state['carrito'] = []
 
@@ -419,6 +422,8 @@ with tab_config:
         
         if st.button("💾 GUARDAR PRECIOS PERMANENTES EN LA NUBE", type="primary", use_container_width=True):
             try:
+                # INYECTAMOS EL DÓLAR ADENTRO DEL DICCIONARIO ANTES DE SUBIRLO
+                st.session_state['precios_insumos']["VALOR_DOLAR_SISTEMA"] = float(st.session_state['dolar'])
                 supabase.table("config_insumos").upsert({
                     "id": "lista_precios",
                     "valores": st.session_state['precios_insumos']
