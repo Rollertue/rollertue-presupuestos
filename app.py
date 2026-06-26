@@ -527,16 +527,19 @@ with tab_config:
 # =========================================================
 # PESTAÑA: HISTORIAL CLOUD 
 # =========================================================
+# =========================================================
+# PESTAÑA: HISTORIAL CLOUD (REEMPLAZÁ EXCLUSIVAMENTE ESTE TRAMO)
+# =========================================================
 with tab_historial_cloud:
     st.header("🌐 Historial de Órdenes Guardadas en Internet")
     try:
         respuesta = supabase.table("presupuestos").select("*").order("id", desc=True).execute()
         if respuesta.data:
             for row in respuesta.data:
-                # Añadimos espacio para el control de estado
-                c_info, c_estado, c_recup = st.columns([4, 1.5, 1.2])
+                # Modificamos las proporciones para abrir espacio al tacho de basura
+                c_info, c_estado, c_recup, c_borrar = st.columns([3.8, 1.4, 1.0, 0.8])
                 
-                # Definimos un indicador visual segun el estado
+                # Definimos un indicador visual según el estado
                 badge = "📨" if row.get('estado', 'Enviado') == 'Enviado' else "✅"
                 c_info.write(f"{badge} **{row['fecha']}** | {row['cliente']} | Total: **$ {row['total_efectivo']:,}**")
                 
@@ -549,14 +552,13 @@ with tab_historial_cloud:
                     "Estado", opciones, index=idx_init, key=f"est_{row['id']}", label_visibility="collapsed"
                 )
                 
-                # Si cambias el selector, se actualiza Supabase en el acto
                 if nuevo_estado != estado_actual:
                     supabase.table("presupuestos").update({"estado": nuevo_estado}).eq("id", row['id']).execute()
                     st.toast(f"Orden actualizada a {nuevo_estado}", icon="🔄")
                     st.rerun()
                 
+                # Botón de Cargar en Editor
                 if c_recup.button("📂 Editar", key=f"rec_{row['id']}"):
-                    # (Mantiene intacta tu logica de carga en el editor que ya tenias)
                     texto_cliente = row['cliente']
                     try:
                         partes = texto_cliente.split(" (PR-")
@@ -574,7 +576,22 @@ with tab_historial_cloud:
                     if 'detalle_items' in row and row['detalle_items']:
                         st.session_state.carrito = json.loads(row['detalle_items'])
                     st.rerun()
+
+                # =========================================================
+                # NUEVO BOTÓN: ELIMINACIÓN FÍSICA EN LA BASE DE DATOS
+                # =========================================================
+                if c_borrar.button("🗑️", key=f"del_cloud_{row['id']}", help="Eliminar permanentemente de la nube"):
+                    try:
+                        # Borra el registro de internet usando su ID único
+                        supabase.table("presupuestos").delete().eq("id", row['id']).execute()
+                        st.toast(f"Orden eliminada de la nube", icon="🗑️")
+                        st.rerun() # Forzamos la recarga para que desaparezca de la pantalla en el acto
+                    except Exception as e_del:
+                        st.error(f"No se pudo borrar: {e_del}")
+                
                 st.markdown("<hr style='margin: 4px 0px;'>", unsafe_allow_html=True)
+        else:
+            st.info("No hay presupuestos registrados todavía en la nube.")
     except Exception as e:
         st.warning(f"Error al leer desde Supabase: {e}")
 # =========================================================
