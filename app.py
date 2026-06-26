@@ -94,10 +94,11 @@ if 'inst_adicional' not in st.session_state:
     st.session_state['inst_adicional'] = 20000.0
 
 # DISEÑO DE INTERFAZ POR PESTAÑAS
-tab_cotizador, tab_config, tab_historial_cloud = st.tabs([
+tab_cotizador, tab_config, tab_historial_cloud, tab_analitica = st.tabs([
     "🧮 Panel de Cotización", 
     "⚙️ Configuración Financiera y Costos", 
-    "🌐 Historial de Presupuestos Cloud"
+    "🌐 Historial de Presupuestos Cloud",
+    "📊 Cuadro de Rentabilidad" # <-- Nueva pestaña
 ])
 
 # =========================================================
@@ -409,13 +410,20 @@ with tab_cotizador:
                         id_compuesto = f"PR-{nro_presupuesto:05d}-V{version_presupuesto}"
                         carrito_serializado = json.dumps(st.session_state['carrito']) 
                         
+                        # Calculamos de forma aproximada el costo base en pesos de los materiales del pedido
+                        # multiplicando el total de lista por el inverso de los márgenes
+                        factor_costo = (1 - (st.session_state['desc_efectivo'] / 100)) / (1 + (st.session_state['margen_rentabilidad'] / 100))
+                        costo_materiales_estimado = int(gran_total_lista * factor_costo)
+
                         supabase.table("presupuestos").insert({
                             "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
                             "cliente": f"{cliente_global} ({id_compuesto})",
                             "items_cantidad": len(df_carrito),
                             "total_lista": int(gran_total_lista),
                             "total_efectivo": int(t_efectivo_final_neto),
-                            "detalle_items": carrito_serializado  
+                            "detalle_items": carrito_serializado,
+                            "estado": "Enviado",  # <-- Nuevo campo
+                            "costo_materiales": costo_materiales_estimado  # <-- Nuevo campo
                         }).execute()
                         
                         st.success(f"¡Orden {id_compuesto} fijada online!")
@@ -522,10 +530,30 @@ with tab_historial_cloud:
         respuesta = supabase.table("presupuestos").select("*").order("id", desc=True).execute()
         if respuesta.data:
             for row in respuesta.data:
-                c_info, c_recup = st.columns([5, 1.2])
-                c_info.write(f"📅 **{row['fecha']}** | 👤 {row['cliente']} | 📦 Cortinas: {row['items_cantidad']} | Total Contado: **$ {row['total_efectivo']:,}**")
+                # Añadimos espacio para el control de estado
+                c_info, c_estado, c_recup = st.columns([4, 1.5, 1.2])
                 
-                if c_recup.button("📂 Cargar en Editor", key=f"rec_{row['id']}"):
+                # Definimos un indicador visual segun el estado
+                badge = "📨" if row.get('estado', 'Enviado') == 'Enviado' else "✅"
+                c_info.write(f"{badge} **{row['fecha']}** | {row['cliente']} | Total: **$ {row['total_efectivo']:,}**")
+                
+                # Selector de estado directo en la fila
+                estado_actual = row.get('estado', 'Enviado')
+                opciones = ["Enviado", "Aceptado"]
+                idx_init = opciones.index(estado_actual) if estado_actual in opciones else 0
+                
+                nuevo_estado = c_estado.selectbox(
+                    "Estado", opciones, index=idx_init, key=f"est_{row['id']}", label_visibility="collapsed"
+                )
+                
+                # Si cambias el selector, se actualiza Supabase en el acto
+                if nuevo_estado != estado_actual:
+                    supabase.table("presupuestos").update({"estado": nuevo_estado}).eq("id", row['id']).execute()
+                    st.toast(f"Orden actualizada a {nuevo_estado}", icon="🔄")
+                    st.rerun()
+                
+                if c_recup.button("📂 Editar", key=f"rec_{row['id']}"):
+                    # (Mantiene intacta tu logica de carga en el editor que ya tenias)
                     texto_cliente = row['cliente']
                     try:
                         partes = texto_cliente.split(" (PR-")
@@ -537,14 +565,67 @@ with tab_historial_cloud:
                         nombre_limpio = texto_cliente
                         nro_extraido = 160
                         ver_extraida = 1
-                    
                     st.session_state.edit_cliente = str(nombre_limpio)
                     st.session_state.edit_nro = int(nro_extraido)
                     st.session_state.edit_ver = int(ver_extraida)
-                    
                     if 'detalle_items' in row and row['detalle_items']:
                         st.session_state.carrito = json.loads(row['detalle_items'])
                     st.rerun()
                 st.markdown("<hr style='margin: 4px 0px;'>", unsafe_allow_html=True)
     except Exception as e:
         st.warning(f"Error al leer desde Supabase: {e}")
+# =========================================================
+# PESTAÑA NUEVA: CUADRO DE RENTABILIDAD BRUTA (🔐 PRIVADO)
+# =========================================================
+with tab_analitica:
+    st.header("📊 Análisis de Rentabilidad Bruta Realizada")
+    st.markdown("---")
+    
+    # Protegemos los números del negocio con la misma clave de costos
+    if st.session_state.get('pass_ok', False) or password_ingresada == st.secrets["PASSWORD_COSTOS"]:
+        st.session_state['pass_ok'] = True # Mantiene desbloqueado durante la sesion
+        
+        try:
+            # Traemos solo los presupuestos que fueron confirmados como Ventas (Aceptados)
+            res_ventas = supabase.table("presupuestos").select("*").eq("estado", "Aceptado").execute()
+            
+            if res_ventas.data:
+                df_ventas = pd.DataFrame(res_ventas.data)
+                
+                # Convertimos las fechas a formato correcto para agrupar por tiempo
+                df_ventas['fecha_dt'] = pd.to_datetime(df_ventas['fecha'], errors='coerce')
+                df_ventas['Mes'] = df_ventas['fecha_dt'].dt.to_period('M').astype(str)
+                
+                # Cálculos financieros clave
+                facturacion_total = df_ventas['total_efectivo'].sum()
+                costo_materiales_total = df_ventas['costo_materiales'].sum()
+                ganancia_bruta_total = facturacion_total - costo_materiales_total
+                margen_promedio = (ganancia_bruta_total / facturacion_total * 100) if facturacion_total > 0 else 0
+                
+                # Métricas Principales en pantalla
+                col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+                col_m1.metric("Ventas Totales (Contado)", f"$ {facturacion_total:,.0f}")
+                col_m2.metric("Costo Insumos (USD/ARS)", f"$ {costo_materiales_total:,.0f}")
+                col_m3.metric("Ganancia Bruta Real", f"$ {ganancia_bruta_total:,.0f}", delta=f"{margen_promedio:.1f}% Margen")
+                col_m4.metric("Órdenes Cerradas", f"{len(df_ventas)} u.")
+                
+                st.markdown("### 📅 Evolución de Ganancias por Período Mensual")
+                
+                # Agrupamos los datos financieros mes a mes de forma ordenada
+                df_mensual = df_ventas.groupby('Mes').agg({
+                    'total_efectivo': 'sum',
+                    'costo_materiales': 'sum'
+                }).reset_index()
+                
+                df_mensual['Ganancia Bruta ($)'] = df_mensual['total_efectivo'] - df_mensual['costo_materiales']
+                df_mensual.columns = ['Mes de Venta', 'Facturación ($)', 'Costo Insumos ($)', 'Ganancia Bruta ($)']
+                
+                st.dataframe(df_mensual, use_container_width=True, hide_index=True)
+                
+            else:
+                st.info("Aún no tienes presupuestos marcados como 'Aceptado' para calcular rentabilidad.")
+                
+        except Exception as e_an:
+            st.warning(f"Sincroniza tus primeros pedidos con el nuevo formato para activar el cuadro: {e_an}")
+    else:
+        st.warning("🔒 Ingrese la clave de administrador en la pestaña de configuración para visualizar los informes de rentabilidad.")
