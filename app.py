@@ -212,11 +212,16 @@ with tab_cotizador:
         
         if st.button("➕ Agregar Ítem al Presupuesto", type="primary", use_container_width=True):
             detalle_nombre = f"Cortina {tipo_tela} ({'Doble' if es_doble else 'Simple'}) - {ancho_cm:.0f}x{alto_cm:.0f}cm"
+            
+            # CALCULAMOS EL COSTO REAL EN PESOS DE ESTE ÍTEM SEGÚN SU DESPIECE TOTAL
+            costo_materiales_item_ars = costo_unitario_ars * float(cantidad)
+
             st.session_state['carrito'].append({
                 "Detalle Producto": detalle_nombre,
                 "Cantidad": int(cantidad),
                 "Precio Lista Unit. ($)": precio_lista_unitario_fijo,
-                "Precio Lista Total ($)": precio_lista_total_item
+                "Precio Lista Total ($)": precio_lista_total_item,
+                "Costo Total Materiales ($)": costo_materiales_item_ars  # <-- NUEVO CAMPO
             })
             st.rerun()
 
@@ -410,10 +415,8 @@ with tab_cotizador:
                         id_compuesto = f"PR-{nro_presupuesto:05d}-V{version_presupuesto}"
                         carrito_serializado = json.dumps(st.session_state['carrito']) 
                         
-                        # Calculamos de forma aproximada el costo base en pesos de los materiales del pedido
-                        # multiplicando el total de lista por el inverso de los márgenes
-                        factor_costo = (1 - (st.session_state['desc_efectivo'] / 100)) / (1 + (st.session_state['margen_rentabilidad'] / 100))
-                        costo_materiales_estimado = int(gran_total_lista * factor_costo)
+                        # SUMATORIA MATEMÁTICA EXACTA DEL DESPIECE DE TODO EL CARRITO
+                        costo_materiales_real_ars = int(df_carrito["Costo Total Materiales ($)"].sum())
 
                         supabase.table("presupuestos").insert({
                             "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -422,8 +425,8 @@ with tab_cotizador:
                             "total_lista": int(gran_total_lista),
                             "total_efectivo": int(t_efectivo_final_neto),
                             "detalle_items": carrito_serializado,
-                            "estado": "Enviado",  # <-- Nuevo campo
-                            "costo_materiales": costo_materiales_estimado  # <-- Nuevo campo
+                            "estado": "Enviado",
+                            "costo_materiales": costo_materiales_real_ars  # <-- COSTO REAL EN PESOS DE LOS INSUMOS
                         }).execute()
                         
                         st.success(f"¡Orden {id_compuesto} fijada online!")
