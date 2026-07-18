@@ -142,6 +142,7 @@ with tab_cotizador:
             tipo_tela = st.selectbox("Seleccionar Tela:", ["BO 520", "SS OPTIMA 5%", "DOBLE BO + SUNS"])
             tipo_zocalo = st.selectbox("Seleccionar Perfil Zócalo:", ["Zócalo DAVID", "Zócalo SS"])
             es_doble = st.checkbox("¿Es Cortina DOBLE?", value=False)
+            mecanismo_color = st.checkbox("Kit de Mecanismo de Color (+30% en componentes)", value=False)
             cantidad = st.number_input("Cantidad de este ítem:", min_value=1, value=1, step=1)
             
             # --- MOTOR MATEMÁTICO ---
@@ -165,19 +166,23 @@ with tab_cotizador:
             
             precio_tela_seleccionada = p_i.get(tipo_tela, 0.0)
             precio_zocalo_seleccionado = p_i.get(tipo_zocalo, 0.0)
+
+            # 👇 DEFINIMOS EL FACTOR DE RECARGO POR COLOR
+            f_color = 1.30 if mecanismo_color else 1.00
             
+            # Multiplicamos por f_color únicamente los insumos solicitados
             costo_unitario_usd = (
                 (cant_tela_m2 * precio_tela_seleccionada) +  
                 (cant_cano_ml * p_i.get(n_cano, 0.0)) +                         
-                (cant_zocalo_ml * precio_zocalo_seleccionado) +                    
+                (cant_zocalo_ml * precio_zocalo_seleccionado * f_color) +  # <-- Zócalo con recargo                  
                 (((ancho_m * 2) * multiplicador) * p_i.get("CINTA", 0.0)) +                           
                 ((ancho_m * multiplicador) * p_i.get("FIDEO", 0.0)) +                                 
                 ((ancho_m * f_desp * multiplicador) * p_i.get("Fleje", 0.0)) +                        
-                ((1 * multiplicador) * p_i.get(n_mec, 0.0)) +                                         
-                ((4.0 * multiplicador) * p_i.get("CADENA PLÁSTICA", 0.0)) +                           
-                ((1 * multiplicador) * p_i.get("CONTRAPESO CADENA", 0.0)) +  
+                ((1 * multiplicador) * p_i.get(n_mec, 0.0) * f_color) +    # <-- Mecanismo con recargo                                     
+                ((4.0 * multiplicador) * p_i.get("CADENA PLÁSTICA", 0.0) * f_color) + # <-- Cadena con recargo      
+                ((1 * multiplicador) * p_i.get("CONTRAPESO CADENA", 0.0) * f_color) + # <-- Contrapeso con recargo  
                 ((1 * multiplicador) * p_i.get("ACCESORIOS CADENA", 0.0)) +                           
-                ((1 * multiplicador) * p_i.get("FLETE", 0.0))                                         
+                ((1 * multiplicador) * p_i.get("FLETE", 0.0))                                      
             )
             if es_doble:
                 costo_unitario_usd += (1.0 * p_i.get(n_sop_d, 0.0))
@@ -210,7 +215,10 @@ with tab_cotizador:
             st.dataframe(df_vis[["Componente", "Cantidad", "Subtotal USD", "Subtotal ARS"]], use_container_width=True, hide_index=True)
             
             if st.button("➕ Agregar Ítem al Presupuesto", type="primary", use_container_width=True):
-                detalle_nombre = f"Cortina {tipo_tela} ({'Doble' if es_doble else 'Simple'}) - {ancho_cm:.0f}x{alto_cm:.0f}cm"
+               # 👇 AGREGAMOS LA LEYENDA SI ESTÁ TILDADO
+                adicional_texto = " (Mec. Color)" if mecanismo_color else ""
+                detalle_nombre = f"Cortina {tipo_tela} ({'Doble' if es_doble else 'Simple'}) - {ancho_cm:.0f}x{alto_cm:.0f}cm{adicional_texto}"
+                
                 costo_materiales_item_ars = costo_unitario_ars * float(cantidad)
 
                 st.session_state['carrito'].append({
