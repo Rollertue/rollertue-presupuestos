@@ -145,7 +145,7 @@ with tab_cotizador:
             mecanismo_color = st.checkbox("Kit de Mecanismo de Color (+30% en componentes)", value=False)
             cantidad = st.number_input("Cantidad de este ítem:", min_value=1, value=1, step=1)
             
-            # --- MOTOR MATEMÁTICO ---
+           # --- MOTOR MATEMÁTICO CON OPTIMIZACIÓN DE ROLLO DE 2.40M ---
             ancho_m = ancho_cm / 100.0
             alto_m = alto_cm / 100.0
             alto_excedente_m = alto_m + 0.15
@@ -159,30 +159,36 @@ with tab_cotizador:
                 
             p_i = st.session_state['precios_insumos']
             t_c = st.session_state['dolar']
-            
-            cant_tela_m2 = (ancho_m * alto_excedente_m) * f_desp * multiplicador
+
+            # 🛑 REGLA DE OPTIMIZACIÓN DE TELA:
+            # Si el ancho supera los 200 cm (hasta 240 cm), el ancho a cobrar de tela es 2.40 m
+            if 200.0 < ancho_cm <= 240.0:
+                ancho_para_tela = 2.40
+            else:
+                ancho_para_tela = ancho_m
+
+            # Forzamos que la cantidad de m2 use ÚNICAMENTE 'ancho_para_tela'
+            cant_tela_m2 = (ancho_para_tela * alto_excedente_m) * f_desp * multiplicador
             cant_cano_ml = ancho_m * f_desp * multiplicador
             cant_zocalo_ml = ancho_m * f_desp * multiplicador
             
             precio_tela_seleccionada = p_i.get(tipo_tela, 0.0)
             precio_zocalo_seleccionado = p_i.get(tipo_zocalo, 0.0)
 
-            # 👇 DEFINIMOS EL FACTOR DE RECARGO POR COLOR
             f_color = 1.30 if mecanismo_color else 1.00
             
-            # Multiplicamos por f_color únicamente los insumos solicitados
             costo_unitario_usd = (
                 (cant_tela_m2 * precio_tela_seleccionada) +  
                 (cant_cano_ml * p_i.get(n_cano, 0.0)) +                         
-                (cant_zocalo_ml * precio_zocalo_seleccionado * f_color) +  # <-- Zócalo con recargo                  
+                (cant_zocalo_ml * precio_zocalo_seleccionado * f_color) +                   
                 (((ancho_m * 2) * multiplicador) * p_i.get("CINTA", 0.0)) +                           
                 ((ancho_m * multiplicador) * p_i.get("FIDEO", 0.0)) +                                 
                 ((ancho_m * f_desp * multiplicador) * p_i.get("Fleje", 0.0)) +                        
-                ((1 * multiplicador) * p_i.get(n_mec, 0.0) * f_color) +    # <-- Mecanismo con recargo                                     
-                ((4.0 * multiplicador) * p_i.get("CADENA PLÁSTICA", 0.0) * f_color) + # <-- Cadena con recargo      
-                ((1 * multiplicador) * p_i.get("CONTRAPESO CADENA", 0.0) * f_color) + # <-- Contrapeso con recargo  
+                ((1 * multiplicador) * p_i.get(n_mec, 0.0) * f_color) +                                          
+                ((4.0 * multiplicador) * p_i.get("CADENA PLÁSTICA", 0.0) * f_color) + 
+                ((1 * multiplicador) * p_i.get("CONTRAPESO CADENA", 0.0) * f_color) + 
                 ((1 * multiplicador) * p_i.get("ACCESORIOS CADENA", 0.0)) +                           
-                ((1 * multiplicador) * p_i.get("FLETE", 0.0))                                      
+                ((1 * multiplicador) * p_i.get("FLETE", 0.0))                                         
             )
             if es_doble:
                 costo_unitario_usd += (1.0 * p_i.get(n_sop_d, 0.0))
@@ -194,8 +200,11 @@ with tab_cotizador:
             precio_lista_total_item = precio_lista_unitario_fijo * float(cantidad)
 
             st.markdown("#### 🔍 Despiece Unitario de Control")
+            # Leyenda aclaratoria si aplicó la optimización de rollo
+            nota_rollo = " (Rollo 2.40m)" if 200.0 < ancho_cm <= 240.0 else ""
+
             desglose_auditoria = [
-                {"Componente": f"Tela: {tipo_tela}", "Cantidad": cant_tela_m2, "Subtotal USD": cant_tela_m2 * p_i.get(tipo_tela, 0.0)},
+                {"Componente": f"Tela: {tipo_tela}{nota_rollo}", "Cantidad": cant_tela_m2, "Subtotal USD": cant_tela_m2 * p_i.get(tipo_tela, 0.0)},
                 {"Componente": f"Estructura: {n_cano}", "Cantidad": cant_cano_ml, "Subtotal USD": cant_cano_ml * p_i.get(n_cano, 0.0)},
                 {"Componente": f"Terminación: {tipo_zocalo}", "Cantidad": cant_zocalo_ml, "Subtotal USD": cant_zocalo_ml * p_i.get(tipo_zocalo, 0.0)},
                 {"Componente": "Cinta Doble Faz", "Cantidad": (ancho_m * 2) * multiplicador, "Subtotal USD": ((ancho_m * 2) * multiplicador) * p_i.get("CINTA", 0.0)},
