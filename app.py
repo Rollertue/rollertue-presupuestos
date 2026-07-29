@@ -133,19 +133,24 @@ with tab_cotizador:
             ["Calcular por Insumos (Roller)", "Ingreso Manual / Precio Arbitrario"],
             horizontal=True
         )
+
         st.markdown("---")
 
         if modo_carga == "Calcular por Insumos (Roller)":
-            st.markdown("**Configurar Cortina Roller**")
-            ancho_cm = st.number_input("Ancho de la Cortina (en cm)", min_value=10.0, value=150.0, step=1.0)
-            alto_cm = st.number_input("Alto de la Cortina (en cm)", min_value=10.0, value=200.0, step=1.0)
-            tipo_tela = st.selectbox("Seleccionar Tela:", ["BO 520", "SS OPTIMA 5%", "DOBLE BO + SUNS"])
-            tipo_zocalo = st.selectbox("Seleccionar Perfil Zócalo:", ["Zócalo DAVID", "Zócalo SS"])
-            es_doble = st.checkbox("¿Es Cortina DOBLE?", value=False)
-            mecanismo_color = st.checkbox("Kit de Mecanismo de Color (+30% en componentes)", value=False)
-            cantidad = st.number_input("Cantidad de este ítem:", min_value=1, value=1, step=1)
-            
-           # --- MOTOR MATEMÁTICO CON OPTIMIZACIÓN DE ROLLO DE 2.40M ---
+            # --- FORMULARIO CORTINAS ROLLER ---
+            st.markdown("**Cotizador Automático Cortinas Roller**")
+            col_r1, col_r2 = st.columns(2)
+            with col_r1:
+                ancho_cm = st.number_input("Ancho Cortina (cm):", min_value=10.0, value=150.0, step=1.0)
+                tipo_tela = st.selectbox("Seleccionar Tela:", ["BO 520", "SS OPTIMA 5%", "DOBLE BO + SUNS"])
+                tipo_zocalo = st.selectbox("Seleccionar Perfil Zócalo:", ["Zócalo DAVID", "Zócalo SS"])
+                es_doble = st.checkbox("¿Es Cortina DOBLE?", value=False)
+                mecanismo_color = st.checkbox("Kit de Mecanismo de Color (+30% en componentes)", value=False)
+            with col_r2:
+                alto_cm = st.number_input("Alto Cortina (cm):", min_value=10.0, value=200.0, step=1.0)
+                cantidad = st.number_input("Cantidad de este ítem:", min_value=1, value=1, step=1)
+
+            # --- MOTOR MATEMÁTICO ROLLER ---
             ancho_m = ancho_cm / 100.0
             alto_m = alto_cm / 100.0
             alto_excedente_m = alto_m + 0.15
@@ -160,14 +165,12 @@ with tab_cotizador:
             p_i = st.session_state['precios_insumos']
             t_c = st.session_state['dolar']
 
-            # 🛑 REGLA DE OPTIMIZACIÓN DE TELA:
-            # Si el ancho supera los 200 cm (hasta 240 cm), el ancho a cobrar de tela es 2.40 m
+            # Regla de optimización de rollo de 2.40m
             if 200.0 < ancho_cm <= 240.0:
                 ancho_para_tela = 2.40
             else:
                 ancho_para_tela = ancho_m
 
-            # Forzamos que la cantidad de m2 use ÚNICAMENTE 'ancho_para_tela'
             cant_tela_m2 = (ancho_para_tela * alto_excedente_m) * f_desp * multiplicador
             cant_cano_ml = ancho_m * f_desp * multiplicador
             cant_zocalo_ml = ancho_m * f_desp * multiplicador
@@ -199,63 +202,35 @@ with tab_cotizador:
             precio_lista_unitario_fijo = round(precio_lista_bruto / 100) * 100
             precio_lista_total_item = precio_lista_unitario_fijo * float(cantidad)
 
-            st.markdown("#### 🔍 Despiece Unitario de Control")
-            # Leyenda aclaratoria si aplicó la optimización de rollo
-            nota_rollo = " (Rollo 2.40m)" if 200.0 < ancho_cm <= 240.0 else ""
+            adicional_texto = " (Mec. Color)" if mecanismo_color else ""
+            detalle_nombre = f"Cortina {tipo_tela} ({'Doble' if es_doble else 'Simple'}) - {ancho_cm:.0f}x{alto_cm:.0f}cm{adicional_texto}"
 
-            desglose_auditoria = [
-                {"Componente": f"Tela: {tipo_tela}{nota_rollo}", "Cantidad": cant_tela_m2, "Subtotal USD": cant_tela_m2 * p_i.get(tipo_tela, 0.0)},
-                {"Componente": f"Estructura: {n_cano}", "Cantidad": cant_cano_ml, "Subtotal USD": cant_cano_ml * p_i.get(n_cano, 0.0)},
-                {"Componente": f"Terminación: {tipo_zocalo}", "Cantidad": cant_zocalo_ml, "Subtotal USD": cant_zocalo_ml * p_i.get(tipo_zocalo, 0.0)},
-                {"Componente": "Cinta Doble Faz", "Cantidad": (ancho_m * 2) * multiplicador, "Subtotal USD": ((ancho_m * 2) * multiplicador) * p_i.get("CINTA", 0.0)},
-                {"Componente": "Fideo de Agarre", "Cantidad": ancho_m * multiplicador, "Subtotal USD": (ancho_m * multiplicador) * p_i.get("FIDEO", 0.0)},
-                {"Componente": "Fleje de Peso", "Cantidad": ancho_m * f_desp * multiplicador, "Subtotal USD": (ancho_m * f_desp * multiplicador) * p_i.get("Fleje", 0.0)},
-                {"Componente": f"Sistema: {n_mec}", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i.get(n_mec, 0.0)},
-                {"Componente": "Cadena de Mando", "Cantidad": float(4.0 * multiplicador), "Subtotal USD": float(4.0 * multiplicador) * p_i.get("CADENA PLÁSTICA", 0.0)},
-                {"Componente": "Contrapeso Cadena", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i.get("CONTRAPESO CADENA", 0.0)},
-                {"Componente": "Accesorios Cadena", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i.get("ACCESORIOS CADENA", 0.0)},
-                {"Componente": "Flete Logístico", "Cantidad": float(1 * multiplicador), "Subtotal USD": float(1 * multiplicador) * p_i.get("FLETE", 0.0)}
-            ]
-            if es_doble:
-                desglose_auditoria.append({"Componente": f"Soporte Doble: {n_sop_d}", "Cantidad": 1.0, "Subtotal USD": 1.0 * p_i.get(n_sop_d, 0.0)})
-            
-            df_vis = pd.DataFrame(desglose_auditoria)
-            df_vis["Subtotal ARS"] = df_vis["Subtotal USD"] * t_c
-            st.dataframe(df_vis[["Componente", "Cantidad", "Subtotal USD", "Subtotal ARS"]], use_container_width=True, hide_index=True)
-            
             if st.button("➕ Agregar Ítem al Presupuesto", type="primary", use_container_width=True):
-               # 👇 AGREGAMOS LA LEYENDA SI ESTÁ TILDADO
-                adicional_texto = " (Mec. Color)" if mecanismo_color else ""
-                detalle_nombre = f"Cortina {tipo_tela} ({'Doble' if es_doble else 'Simple'}) - {ancho_cm:.0f}x{alto_cm:.0f}cm{adicional_texto}"
-                
                 costo_materiales_item_ars = costo_unitario_ars * float(cantidad)
-
                 st.session_state['carrito'].append({
                     "Detalle Producto": detalle_nombre,
                     "Cantidad": int(cantidad),
-                    "Precio Lista Unit. ($)": precio_lista_unitario_fijo,
-                    "Precio Lista Total ($)": precio_lista_total_item,
-                    "Costo Total Materiales ($)": costo_materiales_item_ars
+                    "Precio Lista Unit. ($)": int(precio_lista_unitario_fijo),
+                    "Precio Lista Total ($)": int(precio_lista_total_item),
+                    "Costo Total Materiales ($)": float(costo_materiales_item_ars)
                 })
+                st.success(f"¡{detalle_nombre} añadido al presupuesto!")
                 st.rerun()
 
         else:
-            # --- FORMULARIO DE INGRESO MANUAL ARBITRARIO (PREFIJADOS) ---
+            # --- FORMULARIO DE INGRESO MANUAL ARBITRARIO (MARGEN AUTOMÁTICO 90%) ---
             st.markdown("**Carga de Producto Especial**")
             
-            # Selector de productos prefijados
             producto_seleccionado = st.selectbox(
                 "Seleccionar Producto:",
                 ["Bandas Verticales", "Wall Panel", "Piso PVC", "Otro (Escribir manualmente)"]
             )
             
-            # Si elige "Otro", permitimos escribir el nombre libremente
             if producto_seleccionado == "Otro (Escribir manualmente)":
                 detalle_manual = st.text_input("Detalle o Nombre del Producto:", placeholder="Ej. Paño Fijo Screen 5%")
             else:
                 detalle_manual = producto_seleccionado
                 
-            # Si es Bandas Verticales, habilitamos campos de medidas
             ancho_bv = 0.0
             alto_bv = 0.0
             if producto_seleccionado == "Bandas Verticales":
@@ -266,12 +241,10 @@ with tab_cotizador:
                 with col_w2:
                     alto_bv = st.number_input("Alto (cm)", min_value=10.0, value=200.0, step=1.0, key="alto_bv")
 
-            # Inputs de precios y cantidades
             c_m1, c_m2 = st.columns(2)
             with c_m1:
-                # El usuario ingresa el valor que quiere cobrar en Efectivo/Contado
                 precio_efectivo_deseado = st.number_input(
-                    "Precio Unitario Deseado CONTADO/EFECTIVO ($):", 
+                    "Precio Venta Unitario CONTADO ($):", 
                     min_value=0, 
                     value=30000, 
                     step=1000,
@@ -280,9 +253,12 @@ with tab_cotizador:
             with c_m2:
                 cantidad_manual = st.number_input("Cantidad:", min_value=1, value=1, step=1, key="cant_manual")
                 
-            # --- CÁLCULO DE LISTA INVERSO ---
-            # Para que al aplicar el descuento de efectivo (ej. 40%) vuelva exactamente al precio efectivo deseado:
-            # precio_lista = precio_efectivo_deseado / (1 - desc_efectivo / 100)
+            # Cálculo de costo (10%) y ganancia (90%)
+            MARGEN_UTILIDAD = 0.50
+            costo_unitario_estimado = precio_efectivo_deseado * (1 - MARGEN_UTILIDAD)
+            costo_materiales_total_manual = costo_unitario_estimado * cantidad_manual
+            
+            # Cálculo de Lista Inverso
             factor_descuento_efectivo = 1 - (st.session_state['desc_efectivo'] / 100)
             
             if factor_descuento_efectivo > 0:
@@ -290,21 +266,16 @@ with tab_cotizador:
             else:
                 precio_lista_calculado = precio_efectivo_deseado
                 
-            # Redondeamos a números enteros limpios para evitar decimales molestos
             precio_lista_unitario_fijo = round(precio_lista_calculado / 100) * 100
             precio_lista_total_manual = precio_lista_unitario_fijo * cantidad_manual
             
-            # Mostramos el desglose matemático para tu control antes de guardar
-            st.write(f"📊 **Simulación de Precios Unitarios para control:**")
-            col_s1, col_s2 = st.columns(2)
-            col_s1.write(f"• Precio de Lista Unitario calculado: **$ {precio_lista_unitario_fijo:,.0f}**")
-            col_s2.write(f"• Con desc. efectivo ({st.session_state['desc_efectivo']}%): **$ {precio_lista_unitario_fijo * factor_descuento_efectivo:,.0f}**")
+            ganancia_estimada_item = (precio_efectivo_deseado - costo_unitario_estimado) * cantidad_manual
+            st.caption(f"💡 **Cálculo de Utilidad (50%):** Ganancia: **$ {ganancia_estimada_item:,.0f}** | Costo Insumo Estimado (50%): **$ {costo_materiales_total_manual:,.0f}**")
             
             if st.button("➕ Agregar Ítem Especial al Presupuesto", type="primary", use_container_width=True):
                 if not detalle_manual or detalle_manual.strip() == "":
                     st.error("Por favor, ingresá el detalle o nombre del producto.")
                 else:
-                    # Si tiene medidas, las concatenamos de forma prolija al nombre del producto
                     if producto_seleccionado == "Bandas Verticales" and ancho_bv > 0 and alto_bv > 0:
                         nombre_final_item = f"{detalle_manual} - {ancho_bv:.0f}x{alto_bv:.0f}cm"
                     else:
@@ -315,10 +286,12 @@ with tab_cotizador:
                         "Cantidad": int(cantidad_manual),
                         "Precio Lista Unit. ($)": int(precio_lista_unitario_fijo),
                         "Precio Lista Total ($)": int(precio_lista_total_manual),
-                        "Costo Total Materiales ($)": 0.0  # Sin costo de insumos roller para no alterar márgenes
+                        "Costo Total Materiales ($)": float(costo_materiales_total_manual)
                     })
                     st.success(f"¡{nombre_final_item} añadido con éxito!")
                     st.rerun()
+
+           
 
     with col_out:
         st.subheader("🛒 Estructura del Presupuesto Actual")
