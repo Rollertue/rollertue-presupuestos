@@ -62,6 +62,8 @@ if 'dolar' not in st.session_state:
 if 'carrito' not in st.session_state:
     st.session_state['carrito'] = []
 
+
+    
 # Estados de inputs para recuperador de presupuestos
 if 'edit_cliente' not in st.session_state:
     st.session_state['edit_cliente'] = ""
@@ -203,7 +205,7 @@ with tab_cotizador:
             precio_lista_total_item = precio_lista_unitario_fijo * float(cantidad)
 
             adicional_texto = " (Mec. Color)" if mecanismo_color else ""
-            detalle_nombre = f"Cortina {tipo_tela} ({'Doble' if es_doble else 'Simple'}) - {ancho_cm:.0f}x{alto_cm:.0f}cm{adicional_texto}"
+            detalle_nombre = f"Cortina {tipo_tela} ({'Doble' if es_doble else 'Premium'}) - {ancho_cm:.0f}x{alto_cm:.0f}cm{adicional_texto}"
 
             if st.button("➕ Agregar Ítem al Presupuesto", type="primary", use_container_width=True):
                 costo_materiales_item_ars = costo_unitario_ars * float(cantidad)
@@ -413,10 +415,10 @@ with tab_cotizador:
                     story.append(Paragraph("Formas de Pago", style_h2))
                     
                     datos_liquidacion = [
-                        [Paragraph("<b>40% DE DESCUENTO CONTADO EFECTIVO / TRANSFERENCIA:</b>", style_texto), Paragraph(f"$ {t_efectivo_final_neto:,.0f}", style_precio_efectivo)],
                         [Paragraph("Precio de Lista:", style_texto), f"$ {gran_total_lista:,.0f}"],
                         [Paragraph("30% De Descuento y 3 Cuotas Fijas:", style_texto), f"3 cuotas de $ {t_3_cuotas/3:,.0f} (Total: $ {t_3_cuotas:,.0f})"],
-                        [Paragraph("35% de Descuento Tarjeta 1 Pago:", style_texto), f"$ {t_tarjeta:,.0f}"]
+                        [Paragraph("35% de Descuento Tarjeta 1 Pago:", style_texto), f"$ {t_tarjeta:,.0f}"],
+                        [Paragraph("<b>40% DE DESCUENTO CONTADO EFECTIVO / TRANSFERENCIA:</b>", style_texto), Paragraph(f"$ {t_efectivo_final_neto:,.0f}", style_precio_efectivo)]
                     ]
                     
                     if costo_instalacion_final > 0:
