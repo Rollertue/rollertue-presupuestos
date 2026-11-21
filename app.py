@@ -374,7 +374,7 @@ with tab_cotizador:
                     )
 
                     story.append(Paragraph("<b>ROLLERTUE CORTINAS ROLLER</b>", style_titulo))
-                    story.append(Paragraph(f"Fábrica de Cortinas | Junín de los Andes, Neuquén | WhatsApp: 2944-160866", style_sub))
+                    story.append(Paragraph(f"Fábrica de Cortinas | Junín de los Andes, Neuquén | WhatsApp: 2972-508542", style_sub))
                     story.append(Spacer(1, 10))
                     
                     nombre_documento_cliente = cliente_global if cliente_global.strip() != "" else "Consumidor Final"
